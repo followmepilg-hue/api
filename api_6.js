@@ -16,8 +16,8 @@ app.get('/search', (req, res) => {
   const id = req.query.id;
   const key = req.query.apikey;
 
-  if (key !== API_KEY) return res.json({step:'Key',err:'ผิด'});
-  if (!/^\d{13}$/.test(id)) return res.json({step:'ID',err:'ต้อง 13 หลัก'});
+  if (key !== API_KEY) return res.json({step:'Key', err:'ผิด'});
+  if (!/^\d{13}$/.test(id)) return res.json({step:'ID', err:'ต้อง 13 หลัก'});
 
   const jar = request.jar();
   const hd = {
@@ -26,19 +26,19 @@ app.get('/search', (req, res) => {
   };
 
   request.get({url:LOGIN, headers:hd, jar, followAllRedirects:true, timeout:25000}, (e,r,b) => {
-    if (e) return res.json({step:'เปิดล็อกอิน',err:e.message});
-    if (!b || b.length<200) return res.json({step:'เปิดล็อกอิน',err:'ว่าง/สั้น'});
+    if (e) return res.json({step:'เปิดล็อกอิน', err:e.message});
+    if (!b || b.length<200) return res.json({step:'เปิดล็อกอิน', err:'ว่าง/สั้น'});
     const $ = cheerio.load(b);
     const csrf = $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val();
-    if (!csrf) return res.json({step:'CSRF',err:'ไม่เจอ'});
+    if (!csrf) return res.json({step:'CSRF', err:'ไม่เจอ'});
 
     request.post({url:LOGIN, headers:hd, jar, form:{_token:csrf,username:USER,password:PASS}, followAllRedirects:true, timeout:25000}, (e,r,b) => {
-      if (e) return res.json({step:'ส่งล็อกอิน',err:e.message});
-      if (/คุณหลุดจากระบบ/i.test(b)) return res.json({step:'ล็อกอิน',err:'ไม่ผ่าน'});
+      if (e) return res.json({step:'ส่งล็อกอิน', err:e.message});
+      if (/คุณหลุดจากระบบ/i.test(b)) return res.json({step:'ล็อกอิน', err:'ไม่ผ่าน'});
 
       request.get({url:TARGET, headers:hd, jar, timeout:25000}, (e,r,b) => {
-        if (e) return res.json({step:'ดึงเป้าหมาย',err:e.message});
-        if (!b.includes(id)) return res.json({step:'ค้นหา',err:'ไม่พบ '+id});
+        if (e) return res.json({step:'ดึงเป้าหมาย', err:e.message});
+        if (!b.includes(id)) return res.json({step:'ค้นหา', err:'ไม่พบ '+id});
         const found=[]; b.split(/<(li|p|div|tr|td)/).forEach(p=>{if(p.includes(id))found.push(p.replace(/<[^>]+>/g,' ').trim().slice(0,200))});
         res.json({ok:true,step:'เสร็จ',id,data:found});
       });
